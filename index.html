@@ -11,6 +11,65 @@
       <main class="todo-app">
         <header class="todo-header">
           <h1 class="todo-title">Todos</h1>
+
+          <section class="auth" aria-label="Account">
+            <div class="auth-guest" hidden>
+              <form class="auth-form auth-form--sign-in">
+                <input
+                  type="email"
+                  class="auth-input auth-email"
+                  placeholder="Email"
+                  autocomplete="email"
+                  required
+                />
+                <input
+                  type="password"
+                  class="auth-input auth-password"
+                  placeholder="Password"
+                  autocomplete="current-password"
+                  required
+                />
+                <button type="submit" class="auth-submit">Sign in</button>
+                <p class="auth-message" hidden></p>
+                <p class="auth-switch">
+                  New User?
+                  <button type="button" class="auth-switch__link" data-mode="sign-up">
+                    Create account
+                  </button>
+                </p>
+              </form>
+
+              <form class="auth-form auth-form--sign-up" hidden>
+                <input
+                  type="email"
+                  class="auth-input auth-email"
+                  placeholder="Email"
+                  autocomplete="email"
+                  required
+                />
+                <input
+                  type="password"
+                  class="auth-input auth-password"
+                  placeholder="Password"
+                  autocomplete="new-password"
+                  required
+                />
+                <button type="submit" class="auth-submit">Create account</button>
+                <p class="auth-message" hidden></p>
+                <p class="auth-switch">
+                  Already have an account?
+                  <button type="button" class="auth-switch__link" data-mode="sign-in">
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            </div>
+
+            <div class="auth-user" hidden>
+              <span class="auth-user__email"></span>
+              <button type="button" class="auth-sign-out">Sign out</button>
+            </div>
+          </section>
         </header>
 
         <form class="todo-form">
@@ -23,6 +82,7 @@
           />
           <button type="submit" class="todo-add-button">Add</button>
         </form>
+        <p class="todo-status" hidden aria-live="polite"></p>
 
         <ul class="todo-list" aria-label="Todo items"></ul>
       </main>
