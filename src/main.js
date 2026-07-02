@@ -1,7 +1,7 @@
 import './style.css'
+import { supabase } from './supabase.js'
 
-const todos = []
-let nextId = 1
+let todos = []
 
 const form = document.querySelector('.todo-form')
 const input = document.querySelector('.todo-input')
@@ -16,7 +16,7 @@ function escapeHtml(text) {
 function render() {
   todoList.innerHTML = todos
     .map((todo) => {
-      const completedClass = todo.completed ? ' todo-item--completed' : ''
+      const completedClass = todo.is_complete ? ' todo-item--completed' : ''
 
       return `
         <li class="todo-item${completedClass}">
@@ -24,8 +24,8 @@ function render() {
             type="checkbox"
             class="todo-item__checkbox"
             data-id="${todo.id}"
-            ${todo.completed ? 'checked' : ''}
-            aria-label="${todo.completed ? 'Mark as incomplete' : 'Mark as complete'}: ${escapeHtml(todo.text)}"
+            ${todo.is_complete ? 'checked' : ''}
+            aria-label="${todo.is_complete ? 'Mark as incomplete' : 'Mark as complete'}: ${escapeHtml(todo.text)}"
           />
           <span class="todo-item__text">${escapeHtml(todo.text)}</span>
           <button type="button" class="todo-item__delete" data-id="${todo.id}">
@@ -37,52 +37,90 @@ function render() {
     .join('')
 }
 
-function addTodo(text) {
-  todos.push({
-    id: nextId++,
-    text,
-    completed: false,
-  })
+async function fetchTodos() {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('id, text, is_complete, created_at')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Failed to fetch todos:', error.message)
+    return
+  }
+
+  todos = data
   render()
 }
 
-function toggleTodo(id) {
+async function addTodo(text) {
+  const { error } = await supabase.from('todos').insert({ text })
+
+  if (error) {
+    console.error('Failed to add todo:', error.message)
+    return false
+  }
+
+  return true
+}
+
+async function toggleTodo(id) {
   const todo = todos.find((item) => item.id === id)
-  if (!todo) return
+  if (!todo) return false
 
-  todo.completed = !todo.completed
-  render()
+  const { error } = await supabase
+    .from('todos')
+    .update({ is_complete: !todo.is_complete })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Failed to toggle todo:', error.message)
+    return false
+  }
+
+  return true
 }
 
-function deleteTodo(id) {
-  const index = todos.findIndex((item) => item.id === id)
-  if (index === -1) return
+async function deleteTodo(id) {
+  const { error } = await supabase.from('todos').delete().eq('id', id)
 
-  todos.splice(index, 1)
-  render()
+  if (error) {
+    console.error('Failed to delete todo:', error.message)
+    return false
+  }
+
+  return true
 }
 
-form.addEventListener('submit', (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault()
 
   const text = input.value.trim()
   if (!text) return
 
-  addTodo(text)
+  const added = await addTodo(text)
+  if (!added) return
+
   input.value = ''
   input.focus()
+  await fetchTodos()
 })
 
-todoList.addEventListener('change', (event) => {
+todoList.addEventListener('change', async (event) => {
   if (!event.target.matches('.todo-item__checkbox')) return
 
-  toggleTodo(Number(event.target.dataset.id))
+  const updated = await toggleTodo(Number(event.target.dataset.id))
+  if (!updated) return
+
+  await fetchTodos()
 })
 
-todoList.addEventListener('click', (event) => {
+todoList.addEventListener('click', async (event) => {
   if (!event.target.matches('.todo-item__delete')) return
 
-  deleteTodo(Number(event.target.dataset.id))
+  const deleted = await deleteTodo(Number(event.target.dataset.id))
+  if (!deleted) return
+
+  await fetchTodos()
 })
 
-render()
+fetchTodos()
