@@ -96,3 +96,211 @@ body {
   margin: 0;
   min-height: 100svh;
 }
+
+#app {
+  min-height: 100svh;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-md);
+}
+
+.todo-app {
+  width: 100%;
+  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.todo-header {
+  text-align: center;
+}
+
+.todo-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.todo-form {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.todo-input,
+.todo-add-button {
+  height: 48px;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+}
+
+.todo-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--space-md);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.todo-input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.todo-input:hover {
+  border-color: var(--color-border-strong);
+}
+
+.todo-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.todo-add-button {
+  flex-shrink: 0;
+  min-width: calc(5rem * 1.4 * 0.8);
+  padding: 0 var(--space-md);
+  font-weight: var(--font-weight-medium);
+  color: #ffffff;
+  background-color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.todo-add-button:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.todo-add-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.todo-item:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+.todo-item--completed {
+  background-color: var(--color-bg);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.todo-item--completed:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.todo-item__checkbox {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.todo-item__checkbox:hover {
+  border-color: var(--color-accent);
+}
+
+.todo-item__checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.todo-item__checkbox:checked {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5L6.5 11.5L12.5 4.5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.875rem;
+}
+
+.todo-item__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.todo-item--completed .todo-item__text {
+  color: var(--color-completed);
+  text-decoration: line-through;
+}
+
+.todo-item__delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 var(--space-sm);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.todo-item__delete:hover {
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border-color: var(--color-danger-subtle);
+}
+
+.todo-item__delete:focus-visible {
+  outline: none;
+  color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
