@@ -1,0 +1,11 @@
+To do list
+
+Features
+- add new todos
+- mark complete (and mark incomplete)
+- delete a todo 
+
+Tech for the prototype
+- Vite
+- Vanilla JS
+- No backend for now
