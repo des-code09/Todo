@@ -46,7 +46,7 @@
   --color-accent-subtle: var(--palette-primary-50);
   --color-accent-muted: var(--palette-primary-100);
   --color-on-accent: var(--palette-primary-900);
-  --color-focus-ring: color-mix(in srgb, var(--palette-primary-400) 48%, transparent);
+  --color-focus-ring: color-mix(in srgb, var(--palette-primary-400) 32%, transparent);
 
   --color-danger: var(--palette-danger-500);
   --color-danger-hover: var(--palette-danger-600);
@@ -110,7 +110,7 @@
   --duration-fast: 0.15s;
   --ease-default: ease;
   --transition-interactive: var(--duration-fast) var(--ease-default);
-  --focus-ring-width: 3px;
+  --focus-ring-width: 2px;
   --focus-ring: 0 0 0 var(--focus-ring-width) var(--color-focus-ring);
   --opacity-disabled: 0.6;
   --underline-offset: 0.15em;
@@ -135,7 +135,7 @@
     --color-accent-subtle: color-mix(in srgb, var(--palette-primary-300) 20%, transparent);
     --color-accent-muted: color-mix(in srgb, var(--palette-primary-300) 12%, transparent);
     --color-on-accent: #2a2426;
-    --color-focus-ring: color-mix(in srgb, var(--palette-primary-300) 55%, transparent);
+    --color-focus-ring: color-mix(in srgb, var(--palette-primary-300) 38%, transparent);
 
     --color-danger: #e89aaa;
     --color-danger-hover: #f0b0bc;
@@ -176,7 +176,7 @@ html[data-theme="dark"] {
   --color-accent-subtle: color-mix(in srgb, var(--palette-primary-300) 20%, transparent);
   --color-accent-muted: color-mix(in srgb, var(--palette-primary-300) 12%, transparent);
   --color-on-accent: #2a2426;
-  --color-focus-ring: color-mix(in srgb, var(--palette-primary-300) 55%, transparent);
+  --color-focus-ring: color-mix(in srgb, var(--palette-primary-300) 38%, transparent);
 
   --color-danger: #e89aaa;
   --color-danger-hover: #f0b0bc;
@@ -216,7 +216,7 @@ html[data-theme="light"] {
   --color-accent-subtle: var(--palette-primary-50);
   --color-accent-muted: var(--palette-primary-100);
   --color-on-accent: var(--palette-primary-900);
-  --color-focus-ring: color-mix(in srgb, var(--palette-primary-400) 48%, transparent);
+  --color-focus-ring: color-mix(in srgb, var(--palette-primary-400) 32%, transparent);
 
   --color-danger: var(--palette-danger-500);
   --color-danger-hover: var(--palette-danger-600);
