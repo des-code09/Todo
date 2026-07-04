@@ -1,0 +1,118 @@
+@font-face {
+  font-family: 'Plus Jakarta Sans Fallback';
+  src: local('Segoe UI'), local('Helvetica Neue'), local('Arial');
+  size-adjust: 100%;
+  ascent-override: 98%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
+:root {
+  color-scheme: light;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html:not(.fonts-ready) #app {
+  visibility: hidden;
+}
+
+html.fonts-ready #app {
+  visibility: visible;
+  animation: app-enter 0.35s ease-out;
+}
+
+@keyframes app-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.app-progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 20;
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  background-color: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: opacity 0.2s ease;
+}
+
+html.app-fetching .app-progress {
+  opacity: 1;
+  animation: app-progress 1.2s ease-in-out infinite;
+}
+
+@keyframes app-progress {
+  0% {
+    transform: scaleX(0.06);
+  }
+
+  50% {
+    transform: scaleX(0.62);
+  }
+
+  100% {
+    transform: scaleX(0.96);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+}
+
+#app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.todo-app {
+  flex: 1;
+  width: 100%;
+  max-width: var(--layout-app-max-width);
+  margin-inline: auto;
+  padding: var(--space-xl) var(--space-md);
+}
+
+[hidden] {
+  display: none !important;
+}
