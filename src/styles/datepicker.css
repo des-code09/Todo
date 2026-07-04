@@ -1,0 +1,166 @@
+.date-picker {
+  position: fixed;
+  z-index: 30;
+  width: min(14rem, calc(100vw - 2 * var(--space-md)));
+  padding: var(--space-sm);
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.date-picker__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-block-end: var(--space-xs);
+}
+
+.date-picker__title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+  text-align: center;
+}
+
+.date-picker__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--transition-interactive),
+    background-color var(--transition-interactive),
+    border-color var(--transition-interactive);
+}
+
+.date-picker__nav svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.date-picker__nav:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.date-picker__nav:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.date-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+  margin-block-end: 0.125rem;
+}
+
+.date-picker__weekday {
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+}
+
+.date-picker__day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 1.625rem;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-none);
+  color: var(--color-text);
+  background: none;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--transition-interactive),
+    background-color var(--transition-interactive),
+    border-color var(--transition-interactive);
+}
+
+.date-picker__day:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.date-picker__day:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.date-picker__day--outside {
+  color: var(--color-text-subtle);
+}
+
+.date-picker__day--today:not(.date-picker__day--selected) {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.date-picker__day--selected {
+  color: var(--color-on-accent);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.date-picker__day--selected:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.date-picker__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--space-xs);
+  padding-block-start: var(--space-xs);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.date-picker__today {
+  padding: 0.125rem var(--space-xs);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  background: none;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--transition-interactive),
+    background-color var(--transition-interactive);
+}
+
+.date-picker__today:hover {
+  color: var(--color-accent-hover);
+  background-color: var(--color-accent-subtle);
+}
+
+.date-picker__today:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

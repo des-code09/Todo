@@ -104,11 +104,12 @@
           </label>
           <label class="todo-field todo-field--due">
             <span class="todo-field__label">Due date</span>
-            <input
-              type="date"
-              class="todo-due-input"
-              required
-            />
+            <input type="hidden" class="todo-due-value" value="" />
+            <button
+              type="button"
+              class="todo-due-trigger"
+              aria-label="Choose due date"
+            ></button>
           </label>
           <div class="todo-field todo-field--action">
             <span class="todo-field__label todo-field__label--spacer" aria-hidden="true">Due date</span>

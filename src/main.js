@@ -8,8 +8,16 @@ import {
   VALIDATION_MESSAGES,
 } from './errors.js'
 import { showToast, dismissToast } from './toast.js'
+import { todayLocalDateString, formatDueDate } from './dateUtils.js'
+import {
+  closeDatePicker,
+  datePickerContains,
+  isDatePickerOpen,
+  openDatePicker,
+} from './datePicker.js'
 
 const UNDO_DELETE_MS = 5000
+const ANONYMOUS_USER_ID_KEY = 'pendingAnonymousUserId'
 
 const ICON_DELETE =
   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
@@ -30,7 +38,8 @@ let hasLoadedTodosOnce = false
 
 const form = document.querySelector('.todo-form')
 const input = document.querySelector('.todo-input')
-const dueDateInput = document.querySelector('.todo-due-input')
+const dueDateValue = document.querySelector('.todo-due-value')
+const dueDateTrigger = document.querySelector('.todo-due-trigger')
 const todoList = document.querySelector('.todo-list')
 const todoStatus = document.querySelector('.todo-status')
 const addButton = document.querySelector('.todo-add-button')
@@ -78,25 +87,13 @@ function escapeHtml(text) {
   return element.innerHTML
 }
 
-function todayLocalDateString() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+function setAddFormDueDate(dateString) {
+  dueDateValue.value = dateString
+  dueDateTrigger.textContent = formatDueDate(dateString)
+  dueDateTrigger.setAttribute('aria-label', `Due date: ${formatDueDate(dateString)}`)
 }
 
-dueDateInput.value = todayLocalDateString()
-
-function formatDueDate(dateString) {
-  const [year, month, day] = dateString.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
-  return date.toLocaleDateString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
+setAddFormDueDate(todayLocalDateString())
 
 function getDueDateClass(todo) {
   if (todo.is_complete) return ''
@@ -123,6 +120,48 @@ function sortTodos(list) {
     if (dueCompare !== 0) return dueCompare
     return String(left.created_at ?? '').localeCompare(String(right.created_at ?? ''))
   })
+}
+
+function scheduleTodoListSettled() {
+  if (!todoList.classList.contains('todo-list--revealed')) return
+  if (todoList.classList.contains('todo-list--settled')) return
+
+  window.setTimeout(() => {
+    todoList.classList.add('todo-list--settled')
+  }, 320)
+}
+
+function clearDueEditingUI() {
+  for (const dueButton of todoList.querySelectorAll('.todo-item__due--editing')) {
+    dueButton.classList.remove('todo-item__due--editing')
+  }
+}
+
+function activateDueEditing(id, { openDatePicker = false } = {}) {
+  clearDueEditingUI()
+
+  const dueButton = todoList.querySelector(`.todo-item[data-id="${id}"] .todo-item__due`)
+  if (!dueButton) return false
+
+  dueButton.classList.add('todo-item__due--editing')
+
+  if (openDatePicker) {
+    openEditingDueDatePicker(dueButton)
+  } else {
+    dueButton.focus({ preventScroll: true })
+  }
+
+  return true
+}
+
+function replaceTodoRow(id) {
+  const todo = todos.find((item) => item.id === id)
+  const existing = todoList.querySelector(`.todo-item[data-id="${id}"]`)
+  if (!todo || !existing) return
+
+  const template = document.createElement('template')
+  template.innerHTML = renderTodoItem(todo).trim()
+  existing.replaceWith(template.content.firstElementChild)
 }
 
 function patchTodo(id, updates) {
@@ -163,6 +202,52 @@ function todosEqual(left, right) {
 
 function isAnonymousUser(currentUser) {
   return Boolean(currentUser?.is_anonymous)
+}
+
+function rememberAnonymousUserId(currentUser) {
+  if (!currentUser?.id || !isAnonymousUser(currentUser)) return
+  localStorage.setItem(ANONYMOUS_USER_ID_KEY, currentUser.id)
+}
+
+function getPendingAnonymousUserId() {
+  return localStorage.getItem(ANONYMOUS_USER_ID_KEY)
+}
+
+function clearPendingAnonymousUserId() {
+  localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
+}
+
+async function migrateAnonymousTodos(anonymousUserId) {
+  if (!anonymousUserId) return true
+
+  const { error } = await supabase.rpc('migrate_anonymous_todos', {
+    anonymous_user_id: anonymousUserId,
+  })
+
+  if (error) {
+    logError('migrateAnonymousTodos', error)
+    return false
+  }
+
+  return true
+}
+
+async function reconcileAnonymousTodos(session, { migrateFromAnonymousId = null } = {}) {
+  if (!session?.user) return
+
+  if (isAnonymousUser(session.user)) {
+    rememberAnonymousUserId(session.user)
+    return
+  }
+
+  const anonymousUserId = migrateFromAnonymousId ?? getPendingAnonymousUserId()
+  if (!anonymousUserId || anonymousUserId === session.user.id) {
+    clearPendingAnonymousUserId()
+    return
+  }
+
+  await migrateAnonymousTodos(anonymousUserId)
+  clearPendingAnonymousUserId()
 }
 
 function isEmailUser(currentUser) {
@@ -215,7 +300,7 @@ function setLoadingState(loading) {
   isLoadingTodos = loading
   form.classList.toggle('todo-form--loading', loading)
   input.disabled = loading
-  dueDateInput.disabled = loading
+  dueDateTrigger.disabled = loading
 
   if (loading) {
     addButton.disabled = true
@@ -252,7 +337,7 @@ function clearFormValidation() {
 function validateAddForm() {
   const rawText = input.value
   const text = rawText.trim()
-  const dueDate = dueDateInput.value
+  const dueDate = dueDateValue.value
 
   if (!text && !rawText) {
     setInputValidation(true)
@@ -367,10 +452,13 @@ function renderSkeleton() {
 }
 
 function renderTodoItem(todo) {
-  const dueDateClass = getDueDateClass(todo)
-  const itemClass = getTodoItemClass(todo)
   const isEditingText = editingField?.id === todo.id && editingField.field === 'text'
   const isEditingDue = editingField?.id === todo.id && editingField.field === 'due'
+  const activeDueDate = isEditingDue
+    ? (editingField.draftDueDate ?? todo.due_date)
+    : todo.due_date
+  const dueDateClass = getDueDateClass({ ...todo, due_date: activeDueDate })
+  const itemClass = getTodoItemClass(todo)
 
   const textContent = isEditingText
     ? `
@@ -390,27 +478,16 @@ function renderTodoItem(todo) {
               aria-label="Edit todo: ${escapeHtml(todo.text)}"
             >${escapeHtml(todo.text)}</span>`
 
-  const dueContent = isEditingDue
-    ? `
-          <input
-            type="date"
-            class="todo-item__edit-due"
+  const dueContent = `
+          <button
+            type="button"
+            class="todo-item__due${dueDateClass}${isEditingDue ? ' todo-item__due--editing' : ''}"
             data-id="${todo.id}"
-            value="${todo.due_date}"
-            required
-            aria-label="Edit due date"
-          />`
-    : `
-          <time
-            class="todo-item__due${dueDateClass}"
-            data-id="${todo.id}"
-            datetime="${todo.due_date}"
-            tabindex="0"
-            role="button"
-            aria-label="Edit due date: ${formatDueDate(todo.due_date)}"
+            data-value="${activeDueDate}"
+            aria-label="Edit due date: ${formatDueDate(activeDueDate)}"
           >
-            ${formatDueDate(todo.due_date)}
-          </time>`
+            ${formatDueDate(activeDueDate)}
+          </button>`
 
   return `
         <li class="todo-item${itemClass}" data-id="${todo.id}">
@@ -439,7 +516,25 @@ function renderTodoItem(todo) {
       `
 }
 
-function render() {
+function openEditingDueDatePicker(button) {
+  if (!button || !editingField || editingField.field !== 'due') return
+
+  const todo = todos.find((item) => item.id === editingField.id)
+  if (!todo) return
+
+  const currentValue = button.dataset.value || editingField.draftDueDate || todo.due_date
+
+  openDatePicker({
+    anchor: button,
+    value: currentValue,
+    onSelect: (isoDate) => {
+      editingField.draftDueDate = isoDate
+      void saveEditing()
+    },
+  })
+}
+
+function render({ openDatePicker = false } = {}) {
   todoList.classList.toggle('todo-list--loading', isLoadingTodos)
 
   if (isLoadingTodos) {
@@ -450,35 +545,75 @@ function render() {
   todoList.innerHTML = sortTodos(todos).map((todo) => renderTodoItem(todo)).join('')
 
   if (editingField != null) {
-    const selector = editingField.field === 'text'
-      ? '.todo-item__edit-text'
-      : '.todo-item__edit-due'
-    const activeInput = todoList.querySelector(
-      `.todo-item[data-id="${editingField.id}"] ${selector}`,
+    if (editingField.field === 'text') {
+      const activeInput = todoList.querySelector(
+        `.todo-item[data-id="${editingField.id}"] .todo-item__edit-text`,
+      )
+      if (activeInput) {
+        activeInput.focus()
+        activeInput.select()
+      }
+      return
+    }
+
+    const dueButton = todoList.querySelector(
+      `.todo-item[data-id="${editingField.id}"] .todo-item__due--editing`,
     )
-    activeInput?.focus()
-    if (editingField.field === 'text' && activeInput) {
-      activeInput.select()
+
+    if (dueButton && openDatePicker) {
+      openEditingDueDatePicker(dueButton)
+    } else if (dueButton) {
+      dueButton.focus()
     }
   }
 }
 
-async function startEditing(id, field) {
+async function startEditing(id, field, { openDatePicker = false } = {}) {
+  closeDatePicker({ notify: false })
+
+  const previousEditing = editingField
+
   if (editingField && (editingField.id !== id || editingField.field !== field)) {
     const saved = await saveEditing({ renderAfter: false })
     if (!saved) return
   }
 
-  if (editingField?.id === id && editingField.field === field) return
+  if (editingField?.id === id && editingField.field === field) {
+    if (field === 'due' && openDatePicker) {
+      const dueButton = todoList.querySelector(`.todo-item[data-id="${id}"] .todo-item__due--editing`)
+      if (dueButton) openEditingDueDatePicker(dueButton)
+    }
+    return
+  }
 
   editingField = { id, field }
   showTodoError('')
+
+  if (field === 'due') {
+    if (previousEditing?.field === 'text') {
+      replaceTodoRow(previousEditing.id)
+    }
+
+    if (!activateDueEditing(id, { openDatePicker })) {
+      render({ openDatePicker })
+    }
+    return
+  }
+
   render()
 }
 
 function cancelEditing() {
+  closeDatePicker({ notify: false })
+
+  const wasTextEditing = editingField?.field === 'text'
+  const editingId = editingField?.id
   editingField = null
-  render()
+  clearDueEditingUI()
+
+  if (wasTextEditing && editingId != null) {
+    replaceTodoRow(editingId)
+  }
 }
 
 async function saveEditing({ renderAfter = true } = {}) {
@@ -535,29 +670,30 @@ async function saveEditingInternal({ renderAfter = true } = {}) {
 
     updates = { text: trimmedText }
   } else {
-    const dueInput = row.querySelector('.todo-item__edit-due')
-    if (!dueInput) {
+    const dueButton = row.querySelector('.todo-item__due--editing')
+    if (!dueButton) {
       editingField = null
+      clearDueEditingUI()
       if (renderAfter) render()
       return true
     }
 
-    const due_date = dueInput.value
+    const due_date = editingField.draftDueDate ?? dueButton.dataset.value
     if (!due_date) {
       showTodoError(VALIDATION_MESSAGES.missingDueDate)
-      dueInput.focus()
+      dueButton.focus()
       return false
     }
 
     if (due_date === todo.due_date) {
       editingField = null
-      if (renderAfter) render()
+      clearDueEditingUI()
       return true
     }
 
     const saved = await updateTodo(id, { due_date })
     if (!saved) {
-      dueInput.focus()
+      dueButton.focus()
       return false
     }
 
@@ -566,7 +702,8 @@ async function saveEditingInternal({ renderAfter = true } = {}) {
 
   editingField = null
   patchTodo(id, updates)
-  if (renderAfter) render()
+  clearDueEditingUI()
+  if (renderAfter || field === 'due') render()
   return true
 }
 
@@ -678,11 +815,12 @@ async function scheduleDeleteTodo(id) {
   }, UNDO_DELETE_MS)
 }
 
-async function syncSession(session) {
+async function syncSession(session, options = {}) {
   if (!session?.user) return false
   if (syncSessionPromise) return syncSessionPromise
 
   syncSessionPromise = (async () => {
+    await reconcileAnonymousTodos(session, options)
     user = session.user
     renderNavAccount()
     await fetchTodos({ silent: true })
@@ -750,6 +888,7 @@ async function fetchTodosInternal({ silent = false } = {}) {
     hasLoadedTodosOnce = true
     todoList.classList.add('todo-list--revealed')
     render()
+    scheduleTodoListSettled()
   }
 }
 
@@ -819,6 +958,7 @@ async function handleSignIn(event) {
 
   const email = signInForm.querySelector('.auth-email').value.trim()
   const password = signInForm.querySelector('.auth-password').value
+  const anonymousUserId = isAnonymousUser(user) ? user.id : null
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
@@ -828,7 +968,7 @@ async function handleSignIn(event) {
 
   signInForm.reset()
   closeNavMenu()
-  await syncSession(data.session)
+  await syncSession(data.session, { migrateFromAnonymousId: anonymousUserId })
 }
 
 async function handleSignUp(event) {
@@ -902,7 +1042,7 @@ async function handleSignOut() {
     user = null
     todos = []
     hasLoadedTodosOnce = false
-    todoList.classList.remove('todo-list--revealed')
+    todoList.classList.remove('todo-list--revealed', 'todo-list--settled')
     render()
     renderNavAccount()
     closeNavMenu()
@@ -936,7 +1076,7 @@ form.addEventListener('submit', async (event) => {
     if (!added) return
 
     input.value = ''
-    dueDateInput.value = todayLocalDateString()
+    setAddFormDueDate(todayLocalDateString())
     clearFormValidation()
     input.focus()
     await fetchTodos({ silent: true })
@@ -955,12 +1095,20 @@ input.addEventListener('input', () => {
   updateAddButtonState()
 })
 
-todoList.addEventListener('change', async (event) => {
-  if (event.target.matches('.todo-item__edit-due')) {
-    void saveEditing()
-    return
-  }
+dueDateTrigger.addEventListener('click', () => {
+  if (dueDateTrigger.disabled) return
 
+  openDatePicker({
+    anchor: dueDateTrigger,
+    value: dueDateValue.value || todayLocalDateString(),
+    onSelect: (isoDate) => {
+      setAddFormDueDate(isoDate)
+      updateAddButtonState()
+    },
+  })
+})
+
+todoList.addEventListener('change', async (event) => {
   if (!event.target.matches('.todo-item__checkbox')) return
   if (event.target.disabled) return
 
@@ -985,7 +1133,12 @@ todoList.addEventListener('click', (event) => {
 
   const dueEl = event.target.closest('.todo-item__due')
   if (dueEl) {
-    void startEditing(Number(dueEl.dataset.id), 'due')
+    if (dueEl.matches('.todo-item__due--editing')) {
+      openEditingDueDatePicker(dueEl)
+      return
+    }
+
+    void startEditing(Number(dueEl.dataset.id), 'due', { openDatePicker: true })
     return
   }
 
@@ -996,12 +1149,13 @@ todoList.addEventListener('click', (event) => {
 })
 
 todoList.addEventListener('focusout', (event) => {
-  if (!event.target.matches('.todo-item__edit-text, .todo-item__edit-due')) return
+  if (!event.target.matches('.todo-item__edit-text, .todo-item__due--editing')) return
   if (editingField == null) return
 
   const nextTarget = event.relatedTarget
-  if (nextTarget?.matches('.todo-item__edit-text, .todo-item__edit-due')) return
-  if (nextTarget?.closest('.todo-item__text, .todo-item__due')) return
+  if (nextTarget?.matches('.todo-item__edit-text, .todo-item__due--editing')) return
+  if (nextTarget?.closest('.todo-item__text, .todo-item__due:not(.todo-item__due--editing)')) return
+  if (datePickerContains(nextTarget) || isDatePickerOpen()) return
 
   void saveEditing()
 })
@@ -1011,15 +1165,22 @@ todoList.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       const field = event.target.matches('.todo-item__text') ? 'text' : 'due'
-      void startEditing(Number(event.target.dataset.id), field)
+      void startEditing(Number(event.target.dataset.id), field, {
+        openDatePicker: field === 'due',
+      })
     }
     return
   }
 
-  if (!event.target.matches('.todo-item__edit-text, .todo-item__edit-due')) return
+  if (!event.target.matches('.todo-item__edit-text, .todo-item__due--editing')) return
 
   if (event.key === 'Enter') {
     event.preventDefault()
+    if (event.target.matches('.todo-item__due--editing')) {
+      openEditingDueDatePicker(event.target)
+      return
+    }
+
     void saveEditing()
     return
   }
