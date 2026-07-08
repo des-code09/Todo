@@ -105,6 +105,7 @@
   --todo-due-width: 9.5rem;
   --todo-action-width: 4.75rem;
   --todo-due-inset: calc(var(--border-width) + var(--space-sm));
+  --layout-stack-below: 28rem;
 
   /* Interaction */
   --duration-fast: 0.15s;

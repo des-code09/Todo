@@ -51,7 +51,7 @@
 
 .todo-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--todo-due-width) var(--todo-action-width);
+  grid-template-columns: minmax(0, 1fr) minmax(6.5rem, var(--todo-due-width)) var(--todo-action-width);
   gap: var(--space-sm);
   align-items: end;
 }
@@ -64,7 +64,9 @@
 }
 
 .todo-field--due {
-  width: var(--todo-due-width);
+  width: auto;
+  min-width: 0;
+  max-width: var(--todo-due-width);
 }
 
 .todo-field--action {
@@ -264,7 +266,7 @@
 
 .todo-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--todo-due-width) var(--todo-action-width);
+  grid-template-columns: minmax(0, 1fr) minmax(6.5rem, var(--todo-due-width)) var(--todo-action-width);
   align-items: center;
   gap: var(--space-sm);
   padding-block: var(--space-md);
@@ -382,7 +384,9 @@
 }
 
 .todo-item__due {
-  width: var(--todo-due-width);
+  width: 100%;
+  min-width: 0;
+  max-width: var(--todo-due-width);
   box-sizing: border-box;
   padding: 0 var(--space-sm);
   border: none;
@@ -411,12 +415,10 @@
 
 .todo-item__due--today {
   color: var(--color-accent);
-  font-weight: 500;
 }
 
 .todo-item__due--overdue {
   color: var(--color-danger);
-  font-weight: var(--font-weight-medium);
 }
 
 .todo-item--completed .todo-item__due {
@@ -530,7 +532,7 @@
 
 .todo-skeleton {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--todo-due-width) var(--todo-action-width);
+  grid-template-columns: minmax(0, 1fr) minmax(6.5rem, var(--todo-due-width)) var(--todo-action-width);
   align-items: center;
   gap: var(--space-sm);
   padding-block: var(--space-md);
@@ -651,4 +653,132 @@
   outline: none;
   box-shadow: var(--focus-ring);
   border-radius: var(--radius-sm);
+}
+
+/* Stack layout — keep breakpoint in sync with --layout-stack-below in tokens.css */
+@container todo-app (max-width: 28rem) {
+  .todo-form {
+    grid-template-columns: minmax(0, 1fr) var(--todo-action-width);
+    grid-template-areas:
+      'task task'
+      'due action';
+  }
+
+  .todo-form > .todo-field:first-child {
+    grid-area: task;
+  }
+
+  .todo-field--due {
+    grid-area: due;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .todo-field--action {
+    grid-area: action;
+  }
+
+  .todo-item,
+  .todo-skeleton {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'main actions'
+      'due due';
+    row-gap: var(--space-xs);
+  }
+
+  .todo-item__main,
+  .todo-skeleton__main {
+    grid-area: main;
+    gap: var(--space-sm);
+    padding-inline: var(--space-sm) 0;
+  }
+
+  .todo-item__due {
+    grid-area: due;
+    width: auto;
+    max-width: none;
+    justify-self: start;
+    padding-inline: calc(var(--space-sm) + var(--control-size-checkbox) + var(--space-sm));
+  }
+
+  .todo-item__actions,
+  .todo-skeleton__actions {
+    grid-area: actions;
+    align-self: start;
+    margin-inline-end: var(--space-sm);
+  }
+
+  .todo-skeleton__due {
+    grid-area: due;
+    width: 40%;
+    margin-inline-start: calc(var(--space-sm) + var(--control-size-checkbox) + var(--space-sm));
+  }
+}
+
+@media (max-width: 28rem) {
+  .todo-app .todo-form {
+    grid-template-columns: minmax(0, 1fr) var(--todo-action-width);
+    grid-template-areas:
+      'task task'
+      'due action';
+  }
+
+  .todo-app .todo-form > .todo-field:first-child {
+    grid-area: task;
+  }
+
+  .todo-app .todo-field--due {
+    grid-area: due;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .todo-app .todo-field--action {
+    grid-area: action;
+  }
+
+  .todo-app .todo-item,
+  .todo-app .todo-skeleton {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'main actions'
+      'due due';
+    row-gap: var(--space-xs);
+  }
+
+  .todo-app .todo-item__main,
+  .todo-app .todo-skeleton__main {
+    grid-area: main;
+    gap: var(--space-sm);
+    padding-inline: var(--space-sm) 0;
+  }
+
+  .todo-app .todo-item__due {
+    grid-area: due;
+    width: auto;
+    max-width: none;
+    justify-self: start;
+    padding-inline: calc(var(--space-sm) + var(--control-size-checkbox) + var(--space-sm));
+  }
+
+  .todo-app .todo-item__actions,
+  .todo-app .todo-skeleton__actions {
+    grid-area: actions;
+    align-self: start;
+    margin-inline-end: var(--space-sm);
+  }
+
+  .todo-app .todo-skeleton__due {
+    grid-area: due;
+    width: 40%;
+    margin-inline-start: calc(var(--space-sm) + var(--control-size-checkbox) + var(--space-sm));
+  }
+
+  .todo-app {
+    padding-block: var(--space-lg);
+    padding-inline: var(--space-sm);
+  }
 }
